@@ -12,7 +12,7 @@ const anthropic = new Anthropic();
 const app = express()
 app.use(express.json())
 
-app.post("/template", async (req,res)=>{
+app.post("/api/template", async (req,res)=>{
     const prompt = req.body.prompts
 
     const response = await anthropic.messages.create({
@@ -28,19 +28,34 @@ app.post("/template", async (req,res)=>{
 
     if(projectType === "node"){
         res.json({
-            promts : `Project Files:\n\nThe following is a list of all project files and their complete contents that are currently visible and accessible to you.\n\n${nodePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json`
+            prompts : [`Project Files:\n\nThe following is a list of all project files and their complete contents that are currently visible and accessible to you.\n\n${nodePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json`],
+            uiPrompts : [nodePrompt]
         })
         return
     }
     else if(projectType === "react"){
         res.json({
-            promts : `Project Files:\n\nThe following is a list of all project files and their complete contents that are currently visible and accessible to you.\n\n${reactPrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n  - .bolt/prompt`,
-            uiPrompts : "For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.\n\nBy default, this template supports JSX syntax with Tailwind CSS classes, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.\n\nUse icons from lucide-react for logos.\n\nUse stock photos from unsplash where appropriate, only valid URLs you know exist. Do not download the images, only link to them in image tags."
+            prompts : [ 
+                "For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.\n\nBy default, this template supports JSX syntax with Tailwind CSS classes, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.\n\nUse icons from lucide-react for logos.\n\nUse stock photos from unsplash where appropriate, only valid URLs you know exist. Do not download the images, only link to them in image tags.",
+                `Project Files:\n\nThe following is a list of all project files and their complete contents that are currently visible and accessible to you.\n\n${reactPrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n  - .bolt/prompt`],
+            uiPrompts : [reactPrompt]
         })
         return 
     }
     res.status(403).json({"message" : "You can not access this."})
     return
+})
+
+app.post("/api/chat", (req,res)=>{
+    const messages = req.body.messages
+    anthropic.messages.stream({
+        system : getSystemPrompt(),
+        messages: messages,
+        model: 'claude-3-7-sonnet-20250219',
+        max_tokens: 8000,
+    }).on('text', (text) => {
+        console.log(text);
+    });
 })
 
 app.listen(3000)
