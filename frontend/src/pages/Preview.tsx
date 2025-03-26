@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { ChevronDown, ChevronRight, File, Folder, Moon, Sun, Code, Eye, MessageSquare, ListTodo, FolderTree } from 'lucide-react';
+import {Backend_URL} from "../../config"
+import axios from 'axios';
 
 interface FileNode {
   name: string;
   type: 'file' | 'folder';
   children?: FileNode[];
   content?: string;
+}
+
+interface Steps {
+  fileName : string,
+  status : string
 }
 
 export default function Preview() {
@@ -17,6 +24,10 @@ export default function Preview() {
   const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['/']));
+  const [steps,setSteps] = useState<Steps[]>([])
+
+  // todo: use Useeffect to call template api, then chat api 
+    //  todo : use xml parser to generate the the steps 
 
   const initialFiles: FileNode[] = [
     {
@@ -121,6 +132,31 @@ export default function Preview() {
     return null;
   };
 
+  function parseFiles(input : string) {
+    const fileObjects = [];
+    const regex = /(.*?):\n```([\s\S]*?)\n```/g;
+    
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+      fileObjects.push({ fileName: match[1], status: 'completed' });
+    }
+    
+    return fileObjects;
+  }
+
+  useEffect(()=>{
+    const templateRes = async ()=>{
+      const res = await axios.post("http://localhost:3000/api/template",{
+        prompts : projectName
+      })
+
+      const {prompts,uiPrompts} = res.data
+      setSteps(parseFiles(uiPrompts))
+      
+    }
+    templateRes()
+  })
+
   return (
     <div className={`h-screen flex flex-col ${isDarkMode ? 'dark' : ''}`}>
       {/* Header */}
@@ -158,13 +194,7 @@ export default function Preview() {
               <h2 className="font-semibold text-gray-900 dark:text-white">Build Steps</h2>
             </div>
             <div className="space-y-4">
-              {[
-                { title: 'Initialize Project', status: 'completed' },
-                { title: 'Configure Settings', status: 'current' },
-                { title: 'Add Components', status: 'pending' },
-                { title: 'Preview and Test', status: 'pending' },
-                { title: 'Deploy Website', status: 'pending' }
-              ].map((step, index) => (
+              {steps.map((step, index) => (
                 <div
                   key={index}
                   className={`p-4 rounded-lg border ${
@@ -196,7 +226,7 @@ export default function Preview() {
         </div>
 
         {/* File Explorer - 25% */}
-        <div className="w-1/4 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+        {/* <div className="w-1/4 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
           <div className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <FolderTree className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -206,7 +236,15 @@ export default function Preview() {
               {renderFileTree(files)}
             </div>
           </div>
+        </div> */}
+
+        <div className="w-1/4 border-r border-gray-700 flex flex-col">
+        <div className="p-2 text-sm font-medium flex items-center">
+          <span className="ml-2">Files</span>
         </div>
+        <div className="overflow-y-auto flex-1">{renderFileTree(files)}</div>
+        <div className="p-2 text-xs text-gray-500 border-t border-gray-700">{/* File Explorer - 25% */}</div>
+      </div>
 
         {/* Right Content - 25% */}
         <div className="w-1/2 flex flex-col bg-gray-50 dark:bg-gray-900">
