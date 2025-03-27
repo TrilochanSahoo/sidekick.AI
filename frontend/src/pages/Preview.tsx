@@ -146,16 +146,36 @@ export default function Preview() {
 
   useEffect(()=>{
     const templateRes = async ()=>{
+      // console.log(projectName)
       const res = await axios.post("http://localhost:3000/api/template",{
         prompts : projectName
       })
 
       const {prompts,uiPrompts} = res.data
       setSteps(parseFiles(uiPrompts))
+
+      const chatRes = await axios.post("http://localhost:3000/api/chat",{
+        messages : [
+          {
+            "role" : "user",
+            "content" : prompts[0]
+          },
+          {
+            "role" : "user",
+            "content" : prompts[1]
+          },
+          {
+            "role" : "user",
+            "content" : projectName
+          },
+        ]
+      })
+
+      console.log(chatRes.data)
       
     }
     templateRes()
-  })
+  },[])
 
   return (
     <div className={`h-screen flex flex-col ${isDarkMode ? 'dark' : ''}`}>
@@ -217,7 +237,7 @@ export default function Preview() {
                     >
                       <span className="text-white text-sm">{index + 1}</span>
                     </div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">{step.title}</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{step.fileName}</h3>
                   </div>
                 </div>
               ))}

@@ -6,11 +6,17 @@ import express from "express"
 import { TextBlock } from "@anthropic-ai/sdk/resources";
 import {basePrompt as nodePrompt} from "./defaults/node"
 import {basePrompt as reactPrompt} from "./defaults/react"
+import cors from "cors"
 
 const anthropic = new Anthropic();
 
 const app = express()
 app.use(express.json())
+app.use(cors({
+    origin: 'http://localhost:5173', // Allow frontend to access backend
+    methods: 'GET, POST, PUT, DELETE',
+    credentials: true, // Allow cookies, tokens, etc.
+  }));
 
 app.post("/api/template", async (req,res)=>{
     const prompt = req.body.prompts
@@ -58,7 +64,9 @@ app.post("/api/chat", (req,res)=>{
     });
 })
 
-app.listen(3000)
+app.listen(3000,()=>{
+    console.log("Server is running on 3000")
+})
 
 const main = async ()=>{
     anthropic.messages.stream({
