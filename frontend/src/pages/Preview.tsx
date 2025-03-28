@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { ChevronDown, ChevronRight, File, Folder, Moon, Sun, Code, Eye, MessageSquare, ListTodo, FolderTree } from 'lucide-react';
+import { ChevronDown, ChevronRight, File, Folder, Moon, Sun, Code, Eye, MessageSquare, ListTodo } from 'lucide-react';
 import {Backend_URL} from "../../config"
 import axios from 'axios';
 
@@ -144,6 +144,19 @@ export default function Preview() {
     return fileObjects;
   }
 
+  function parseFileContent(input : string) {
+    const fileObjects = [];
+    const regex = /(.*?):\n```([\s\S]*?)\n```/g;
+    
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+      fileObjects.push({ name: match[1], type: 'file', content: match[2].trim() });
+    }
+    
+    return fileObjects;
+  }
+  
+
   useEffect(()=>{
     const templateRes = async ()=>{
       // console.log(projectName)
@@ -153,6 +166,8 @@ export default function Preview() {
 
       const {prompts,uiPrompts} = res.data
       setSteps(parseFiles(uiPrompts))
+
+      console.log(parseFileContent(uiPrompts))
 
       const chatRes = await axios.post("http://localhost:3000/api/chat",{
         messages : [
