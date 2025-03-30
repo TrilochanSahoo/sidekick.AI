@@ -65,7 +65,7 @@ export default function Preview() {
     }
   ];
 
-  const [files] = useState<FileNode[]>(initialFiles);
+  const [files, setFiles] = useState<FileNode[]>(initialFiles);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders((prev) => {
@@ -167,26 +167,48 @@ export default function Preview() {
       const {prompts,uiPrompts} = res.data
       setSteps(parseFiles(uiPrompts))
 
-      console.log(parseFileContent(uiPrompts))
+      const parsedFielContent = parseFileContent(uiPrompts)
+      let fileArr = []
+      parsedFielContent.forEach(ele => {
+        if(ele.name.includes("/")){
+          const items = ele.name.split("/")
+          fileArr.forEach(fileEle => {
+            if(fileEle.name==items[1]){
+              console.log(fileEle)
+            }
+          })
+          // fileArr.push({
+          //   name: fileEle,
+          //   type: 'folder',
+          //   children: []
+          // })
+        }
+        else{
+          fileArr.push(ele)
+        }
+      });
 
-      const chatRes = await axios.post("http://localhost:3000/api/chat",{
-        messages : [
-          {
-            "role" : "user",
-            "content" : prompts[0]
-          },
-          {
-            "role" : "user",
-            "content" : prompts[1]
-          },
-          {
-            "role" : "user",
-            "content" : projectName
-          },
-        ]
-      })
+      setFiles(fileArr)
+      console.log(fileArr)
 
-      console.log(chatRes.data)
+      // const chatRes = await axios.post("http://localhost:3000/api/chat",{
+      //   messages : [
+      //     {
+      //       "role" : "user",
+      //       "content" : prompts[0]
+      //     },
+      //     {
+      //       "role" : "user",
+      //       "content" : prompts[1]
+      //     },
+      //     {
+      //       "role" : "user",
+      //       "content" : projectName
+      //     },
+      //   ]
+      // })
+
+      // console.log(chatRes.data)
       
     }
     templateRes()
